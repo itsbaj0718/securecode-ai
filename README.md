@@ -9,18 +9,20 @@ The platform allows users to:
 * Register and authenticate securely using JWT authentication.
 * Create and manage software projects.
 * Upload complete source code projects as ZIP archives.
-* Extract and store source code files for analysis.
-* Scan code for common security vulnerabilities based on OWASP guidelines.
-* Generate AI-assisted remediation suggestions.
-* Produce security reports and findings dashboards.
+* Extract, process, and persist every source code file into PostgreSQL.
+* Perform static code analysis using custom security rules.
+* Detect common security vulnerabilities based on OWASP principles.
+* Store scan findings for future analysis.
+* Generate AI-assisted remediation suggestions (Upcoming).
+* Produce security reports and interactive dashboards (Upcoming).
 
-The current implementation focuses on the foundational platform architecture, including authentication, project management, database migrations, and file ingestion infrastructure.
+The current implementation now includes a fully functional source code ingestion engine and the foundation of a static application security testing (SAST) scanner.
 
 ---
 
-## Current Features
+# Current Features
 
-### Authentication & Authorization
+## Authentication & Authorization
 
 * User Registration
 * User Login
@@ -29,32 +31,119 @@ The current implementation focuses on the foundational platform architecture, in
 * Stateless Authentication
 * Protected API Endpoints using Spring Security
 
-### Project Management
+---
+
+## Project Management
 
 * Create Project
 * View User Projects
 * Associate Projects with Users
 * Ownership-based data access
 
-### Database Management
+---
+
+## Database Management
 
 * PostgreSQL Integration
 * Flyway Database Versioning
 * Automatic Schema Migration
+* Versioned Database Evolution
 
-### File Ingestion Foundation
+---
 
-* Uploaded Files Database Schema
-* ZIP Upload API Endpoint
-* File Metadata Storage Design
-* Source Code Storage Architecture
+## Source Code Ingestion Engine
 
-### API Documentation
+Implemented:
+
+* Upload complete project as ZIP
+* Validate uploaded archive
+* Extract ZIP contents
+* Filter supported source files
+* Preserve project folder structure
+* Store complete source code inside PostgreSQL
+
+Supported file types:
+
+* Java
+* XML
+* Properties
+* YAML
+* JSON
+* SQL
+* JavaScript
+* TypeScript
+* Markdown
+
+Every supported source file is stored individually for future analysis.
+
+---
+
+## Scanner Engine (Foundation)
+
+Implemented:
+
+* ScanResult database
+* ScannerService
+* ScannerController
+* Scan Summary Response
+* Source Code Reader
+* Project Scanner Endpoint
+
+Current Scan Flow:
+
+Project
+
+↓
+
+Load Uploaded Files
+
+↓
+
+Read Every Source File
+
+↓
+
+Analyze Source Code
+
+↓
+
+Return Scan Summary
+
+---
+
+## Security Rule Engine
+
+Implemented
+
+### Hardcoded Secret Detection (Initial Version)
+
+Current scanner searches for:
+
+* password
+* secret
+* token
+* apiKey
+* api_key
+
+Current implementation:
+
+* Reads every uploaded source file
+* Performs line-by-line analysis
+* Detects potential hardcoded secrets
+* Counts detected vulnerabilities
+
+Future versions will improve detection accuracy and reduce false positives.
+
+---
+
+## API Documentation
 
 * Swagger/OpenAPI Integration
 * Interactive API Testing
 
-### CI/CD
+---
+
+## CI/CD
 
 * GitHub Actions Workflow
 * Automated Maven Build Validation
@@ -62,325 +151,314 @@ The current implementation focuses on the foundational platform architecture, in
 
 ---
 
-## Technology Stack
+# Technology Stack
 
-### Backend
+## Backend
 
 * Java 21
-* Spring Boot 3
+* Spring Boot
 * Spring Security
 * Spring Data JPA
 * Hibernate
 * Flyway
 
-### Database
+## Database
 
 * PostgreSQL
 
-### Security
+## Security
 
 * JWT Authentication
 * BCrypt Password Encryption
 
-### Documentation
+## Documentation
 
 * Swagger / OpenAPI
 
-### Build & CI
+## Build & CI
 
 * Maven
 * GitHub Actions
 
-### Future AI Integration
+## Future AI Integration
 
 * Gemini API
 * OpenAI Compatible APIs
 
 ---
 
-## System Architecture
+# System Architecture
 
-```text
-                        +----------------+
-                        |     Client     |
-                        +-------+--------+
-                                |
-                                |
-                                v
-                    +----------------------+
-                    |   Spring Security    |
-                    +----------------------+
-                                |
-                                |
-                                v
-                    +----------------------+
-                    | JWT Authentication   |
-                    +----------------------+
-                                |
-                                |
-                                v
-                    +----------------------+
-                    |     Controllers      |
-                    +----------------------+
-                                |
-                                |
-                                v
-                    +----------------------+
-                    |      Services        |
-                    +----------------------+
-                                |
-                                |
-                                v
-                    +----------------------+
-                    |    Repositories      |
-                    +----------------------+
-                                |
-                                |
-                                v
-                    +----------------------+
-                    |     PostgreSQL       |
-                    +----------------------+
-```
+Client
+
+↓
+
+Spring Security
+
+↓
+
+JWT Authentication
+
+↓
+
+Controllers
+
+↓
+
+Services
+
+↓
+
+Repositories
+
+↓
+
+PostgreSQL
+
+↓
+
+Scanner Engine
+
+↓
+
+Security Rules
+
+↓
+
+Scan Results
+
+↓
+
+Gemini AI (Upcoming)
 
 ---
 
-## Database Schema
+# Database Schema
 
-### Users
+## users
 
 Stores platform users.
 
-| Column     | Type      |
-| ---------- | --------- |
-| id         | BIGSERIAL |
-| name       | VARCHAR   |
-| email      | VARCHAR   |
-| password   | VARCHAR   |
-| role       | VARCHAR   |
-| created_at | TIMESTAMP |
-| updated_at | TIMESTAMP |
-
 ---
 
-### Projects
+## projects
 
-Stores projects owned by users.
-
-| Column      | Type      |
-| ----------- | --------- |
-| id          | BIGSERIAL |
-| name        | VARCHAR   |
-| description | TEXT      |
-| owner_id    | BIGINT    |
-| created_at  | TIMESTAMP |
-| updated_at  | TIMESTAMP |
+Stores projects uploaded by authenticated users.
 
 Relationship:
 
-```text
 User (1)
-   |
-   |----< Project (N)
-```
+
+↓
+
+Project (N)
 
 ---
 
-### Uploaded Files
+## uploaded_files
 
-Stores source code files belonging to projects.
+Stores every extracted source code file.
 
-| Column       | Type      |
-| ------------ | --------- |
-| id           | BIGSERIAL |
-| project_id   | BIGINT    |
-| file_name    | VARCHAR   |
-| file_path    | VARCHAR   |
-| file_type    | VARCHAR   |
-| file_content | TEXT      |
-| uploaded_at  | TIMESTAMP |
+Fields:
+
+* File Name
+* File Path
+* File Type
+* File Content
+* Upload Timestamp
+* Project Reference
 
 Relationship:
 
-```text
 Project (1)
-   |
-   |----< UploadedFile (N)
-```
+
+↓
+
+UploadedFile (N)
 
 ---
 
-## API Endpoints
+## scan_results
 
-### Authentication
+Stores vulnerabilities detected during static analysis.
 
-#### Register User
+Fields:
 
-```http
+* Rule Name
+* Severity
+* Line Number
+* Description
+* Recommendation
+* Status
+* Created Timestamp
+
+Relationship:
+
+UploadedFile (1)
+
+↓
+
+ScanResult (N)
+
+---
+
+# API Endpoints
+
+## Authentication
+
 POST /api/auth/register
-```
 
-Request:
-
-```json
-{
-  "name": "Bajrang",
-  "email": "bajrang@gmail.com",
-  "password": "password123"
-}
-```
-
----
-
-#### Login
-
-```http
 POST /api/auth/login
-```
-
-Request:
-
-```json
-{
-  "email": "bajrang@gmail.com",
-  "password": "password123"
-}
-```
-
-Response:
-
-```json
-{
-  "token": "jwt-token"
-}
-```
 
 ---
 
-### Projects
+## Projects
 
-#### Create Project
-
-```http
 POST /api/projects
-```
 
-#### Get My Projects
-
-```http
 GET /api/projects
-```
 
 ---
 
-### File Upload
+## File Upload
 
-#### Upload ZIP Archive
-
-```http
 POST /api/files/upload-zip/{projectId}
-```
 
-Current Status:
+Status:
 
-* Endpoint implemented
-* ZIP processing pending
+✔ Implemented
 
----
+✔ ZIP Extraction
 
-## Flyway Migrations
-
-Implemented migrations:
-
-```text
-V1__create_users_table.sql
-
-V2__create_projects_table.sql
-
-V3__create_uploaded_files_table.sql
-
-V4__add_file_path_to_uploaded_files.sql
-```
+✔ Source Code Persistence
 
 ---
 
-## Project Progress
+## Scanner
 
-### Completed
+POST /api/scans/start/{projectId}
+
+Current Behaviour:
+
+* Reads project source code
+* Executes security rules
+* Returns scan summary
+* Foundation for vulnerability detection
+
+---
+
+# Flyway Migrations
+
+Implemented:
+
+* V1__create_users_table.sql
+* V2__create_projects_table.sql
+* V3__create_uploaded_files_table.sql
+* V4__add_file_path_to_uploaded_files.sql
+* V5__create_scan_results_table.sql
+
+---
+
+# Project Progress
+
+## Completed
 
 * Spring Boot Setup
 * PostgreSQL Configuration
 * Flyway Integration
 * Swagger Integration
-* User Authentication
-* JWT Authorization
+* JWT Authentication
 * Project Management Module
-* Uploaded Files Schema
-* ZIP Upload API Foundation
-* GitHub Actions CI Pipeline
-
-### In Progress
-
-* ZIP Extraction Engine
-* Source Code Persistence
-
-### Planned
-
+* ZIP Upload
 * ZIP Extraction
-* File Storage
-* Security Rule Engine
-* OWASP Vulnerability Detection
-* Findings Management
-* AI Security Analysis
-* Vulnerability Remediation Suggestions
-* Security Reports
-* Angular Dashboard
-* Scan History
-* Project Analytics
+* Source Code Persistence
+* Scanner Infrastructure
+* Scan Results Module
+* Initial Hardcoded Secret Detection
+* GitHub Actions CI Pipeline
 
 ---
 
-## Future Roadmap
+## In Progress
 
-### Phase 1 – Foundation (Completed)
+* Persisting detected vulnerabilities into scan_results
+* Modular Rule Engine
+* Security Rule Refinement
+
+---
+
+## Planned
+
+* SQL Injection Detection
+* XSS Detection
+* Weak Cryptography Detection
+* Command Injection Detection
+* Path Traversal Detection
+* AI-powered Vulnerability Explanation
+* Security Report Generation
+* Angular Dashboard
+* GitHub Repository Scanning
+* Docker Deployment
+* AWS Deployment
+
+---
+
+# Future Roadmap
+
+## Phase 1 – Foundation ✅
 
 * Authentication
 * Authorization
 * Project Management
 * Database Design
 
-### Phase 2 – Code Ingestion (In Progress)
+---
+
+## Phase 2 – Code Ingestion ✅
 
 * ZIP Upload
-* Source Code Extraction
-* File Persistence
+* ZIP Extraction
+* Source Code Persistence
 
-### Phase 3 – Security Scanning
+---
 
+## Phase 3 – Static Security Scanning 🚧
+
+* Scanner Engine
+* Hardcoded Secret Detection
 * SQL Injection Detection
 * XSS Detection
-* Hardcoded Secret Detection
 * Weak Authentication Detection
+* Rule Engine
+* Findings Persistence
 
-### Phase 4 – AI Analysis
+---
+
+## Phase 4 – AI Security Analysis
 
 * Gemini Integration
 * AI-generated Remediation
 * Risk Assessment
-
-### Phase 5 – Reporting & Dashboard
-
-* Security Reports
-* Findings Dashboard
-* Scan History
-* Project Insights
+* Secure Code Suggestions
 
 ---
 
-## Author
+## Phase 5 – Dashboard & Reporting
 
-Bajrang Yadav
+* Angular Dashboard
+* Security Reports
+* Scan History
+* Project Analytics
+* PDF Export
+
+---
+
+# Author
+
+**Bajrang Yadav**
 
 Associate Programmer | Java Backend Developer
 
-Technologies:
-Java • Spring Boot • PostgreSQL • Angular • JWT • Flyway • GitHub Actions
+**Technologies**
+
+Java • Spring Boot • PostgreSQL • Spring Security • JWT • Flyway • Hibernate • GitHub Actions • AI • Static Application Security Testing (SAST)
