@@ -1,4 +1,7 @@
 package com.bajrang.securecode_ai.repository;
 
-public class ScanResultRepository {
+import com.bajrang.securecode_ai.entity.ScanResult;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ScanResultRepository extends JpaRepository<ScanResult, Long> {
 }
